@@ -24,6 +24,7 @@
 #include <queue>
 #include <map>
 #include <limits.h>
+#include <unistd.h>
 
 #include "abstractschedulerengine.h"
 

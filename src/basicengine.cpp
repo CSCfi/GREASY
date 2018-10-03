@@ -33,7 +33,12 @@ BasicEngine::BasicEngine ( const string& filename) : AbstractSchedulerEngine(fil
 }
 
 void BasicEngine::init() {
-    
+  
+
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX sysconf (_SC_HOST_NAME_MAX)
+#endif
+  
   char hostname[HOST_NAME_MAX];
   
   log->record(GreasyLog::devel, "BasicEngine::init", "Entering...");
