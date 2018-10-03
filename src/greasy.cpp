@@ -22,6 +22,7 @@
 #include "greasyconfig.h"
 #include "abstractengine.h"
 #include "config.h"
+#include "greasyutils.h"
 
 #include <string>
 #include <csignal>
@@ -40,18 +41,61 @@ AbstractEngine* engine = NULL;
 int my_pid;
 bool readConfig();
 void termHandler( int sig );
+void printError();
 
 int main(int argc, char *argv[]) {
   my_pid=getpid();
   GreasyLog* log = GreasyLog::getInstance();
   GreasyConfig* config = GreasyConfig::getInstance();
     
-  if (argc != 2) {
-      cout << "Usage: greasy filename" << endl;
-      return (0);
+  int opt;
+  string input = "";
+  string filename = "";
+  int ntasks_per_worker = 1;
+
+  // check if there is a (non-option) argument:
+  if ((argc <= 1) || (argv[argc - 1] == NULL) || (argv[argc - 1][0] == '-')) {
+    printError();
+    return 0;
+  } else {
+    input = argv[argc - 1];
   }
+
+  opterr = 0;
+  // Retrieve the options:
+  // while ((opt = getopt(argc, argv, "n:f:")) != -1) {
+  while ((opt = getopt(argc, argv, "f:")) != -1) {
+    switch (opt) {
+    // case 'n':
+    //   ntasks_per_worker = atoi(string(optarg).c_str());
+    //   break;
+    case 'f':
+      filename = string(optarg);
+      break;
+    case '?':
+      cerr << "? case\n";
+      // if (optopt == 'n') {
+      //   cerr << "Option -n requires an argument." << endl;
+      // } else 
+      if (optopt == 'f') {
+        cerr << "Option -f requires an argument." << endl;
+      }
+      cerr << "Unknown option: '" << char(optopt) << "'!" << endl;
+      break;
+    }
+  }  
+
+  if (filename.length() < 1) {
+    printError();
+    return (0);
+  }
+
+  // if (argc != 2) {
+  //     cout << "Usage: greasy filename" << endl;
+  //     return (0);
+  // }
   
-  string filename(argv[1]);
+  // string filename(argv[1]);
   
   // Read config
   if (!readConfig()) {
@@ -119,4 +163,11 @@ void termHandler( int sig ) {
   system(killTree);
   exit(1);
 }
-  
+
+
+void printError() {
+  cout << "Usage: greasy [OPTIONS] filename" << endl;
+  cout << "  where [OPTIONS] can be:" << endl << endl;
+  // cout << " -n NTASKS\t\t Sets the number of tasks per worker to NTASKS" << endl;
+  cout << " -f FILE\t\t Sets the input file to to FILE" << endl;
+}
