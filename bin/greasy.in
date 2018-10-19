@@ -8,7 +8,7 @@ EXE=$GREASY_BINDIR/greasybin
 
 # Check if the script is launched using any kind of spawner
 if [ "$COMMAND" != "greasy" ]; then
-  echo "Usage: greasy <taskfile.txt>"
+  echo "Usage: greasy -f <taskfile.txt>"
   echo "Please rerun greasy without putting $COMMAND before"
   exit
 fi
@@ -33,7 +33,7 @@ if [ -z "$GREASY_LOGFILE" ]; then
  if [ -n "$LSB_BATCH_JID" ];
 	then
 		export GREASY_LOGFILE=greasy-$LSB_BATCH_JID.log
-	else 
+	else
 		if [ -n "$SLURM_JOBID" ]; then
 			export GREASY_LOGFILE=greasy-$SLURM_JOBID.log
 		fi
@@ -89,4 +89,4 @@ fi
 # Run Greasy
 echo $MPIRUN $EXE $@
 $MPIRUN $EXE $@
- 
+
