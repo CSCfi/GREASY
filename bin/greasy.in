@@ -18,12 +18,18 @@ if [ -z "$GREASY_ENGINE" ]; then
   GREASY_ENGINE=`cat $GREASY_CONFDIR/greasy.conf | grep "^[[:blank:]]*Engine=.*$"| tail -n1 | cut -d= -f 2 | cut -d" " -f1`
 fi
 
+# Decide which type of launcher to use depending on the engine selected.
+if [ -z "$GREASY_LAUNCHER" ]; then
+  GREASY_LAUNCHER=`cat $GREASY_CONFDIR/greasy.conf | grep "^[[:blank:]]*BasicRemoteMethod=.*$"| tail -n1 | cut -d= -f 2 | cut -d" " -f1`
+fi
+
+
 if [[ "$GREASY_ENGINE" = "mpi" || "$GREASY_ENGINE" = "MPI" ]]; then
   MPIRUN=@machine_mpirun@
 	#this avoid 100% cpu usage for the master
 #	export I_MPI_WAIT_MODE=1
-	export I_MPI_PIN="disable"
-	export OMPI_MCA_mpi_yield_when_idle=1
+	# export I_MPI_PIN="disable"
+	# export OMPI_MCA_mpi_yield_when_idle=1
 else
   MPIRUN=""
 fi
@@ -40,53 +46,86 @@ if [ -z "$GREASY_LOGFILE" ]; then
 	fi
 fi
 
-if [[ -n "$MPIRUN" && -n "$LSB_BATCH_JID" ]]; then
-  if [[ -n "$GREASY_NWORKERS" && -n "$GREASY_TASKS_PER_NODE" && $GREASY_TASKS_PER_NODE -ne 16 ]]; then
-    GREASY_NNODES=$((($GREASY_NWORKERS + $GREASY_TASKS_PER_NODE -1) / $GREASY_TASKS_PER_NODE))
-    echo "GREASY NWORKERS AND GREASY TASKS PER NODE DETECTED:"
-    echo "TOTAL_NODES=$GREASY_NNODES"
-    echo "GREASY_NWORKERS=$GREASY_NWORKERS"
-    echo "GREASY_TASKS_PER_NODE=$GREASY_TASKS_PER_NODE"
-    n=0;
-    node="";
-		if [ -f $TMPDIR/hostfile.txt ]; then
-			rm $TMPDIR/hostfile.txt
-		fi
-    for i in `cat $LSB_DJOB_HOSTFILE`;do
-      if [ "$i" == "$node" ];then
-        continue
-      fi
-      node=$i;
-      if [ $n -eq 0 ];then
-        for j in `seq 1 $(($GREASY_TASKS_PER_NODE+1))`;do
-          echo $node >> $TMPDIR/hostfile.txt
-        done
-      else
-        for j in `seq 1 $GREASY_TASKS_PER_NODE`;do
-          echo $node >> $TMPDIR/hostfile.txt
-        done
-      fi
-      let n=$n+1
-    done
-    MPIRUN="$MPIRUN -machine $TMPDIR/hostfile.txt -np $(($GREASY_NWORKERS + 1))"
-    #export GREASY_NODELIST=`$MPIRUN hostname | tr "\n" ","`
-    export GREASY_NODELIST=`cat $TMPDIR/hostfile.txt | tr "\n" ","`
-  else
-	  echo "NOTE: List provided by resource manager"
-	export GREASY_NWORKERS=$(($LSB_DJOB_NUMPROC+1))
-	MPIRUN="$MPIRUN -n $GREASY_NWORKERS";
-        #export GREASY_NODELIST=`$MPIRUN hostname | tr "\n" ","`
-   fi
-else
-	if [[ -n "$MPIRUN" && -n "$SLURM_NPROCS" ]]; then
-		export GREASY_NWORKERS=$(($SLURM_NPROCS+1))
-	#	export GREASY_NODELIST=`srun hostname | tr "\n" ","`
-		MPIRUN="$MPIRUN -n $GREASY_NWORKERS -O"
-	fi
+# Use Slurm configuration to setup worker and node if present
+# New addition
+if [ "$GREASY_ENGINE" = "basic" ] && [ "$GREASY_LAUNCHER" = "srun" ]; then
+  __nnodes=1
+  if [[ -n $SLURM_NNODES ]]; then
+    __nnodes=$SLURM_NNODES
+  elif [[ -n $SLURM_NODELIST ]]; then
+    __nnodes=`hostlist -n $SLURM_NODELIST`
+  fi
+
+  __ntasks=1
+  if [[ -n $SLURM_NTASKS ]]; then
+    __ntasks=$SLURM_NTASKS
+  fi
+
+  __ntasks_per_node=1
+  if [[ -n $SLURM_NTASKS_PER_NODE ]]; then
+    __ntasks_per_node=$SLURM_NTASKS_PER_NODE
+  elif [[ -n $SLURM_TASKS_PER_NODE ]]; then
+    __ntasks_per_node=`echo $SLURM_TASKS_PER_NODE | awk -F'(' '{print $1}'`
+  fi
+
+  # Assume a serial application - assign all available tasks to workers
+  # This is the default GREASY behavior
+  __greasy_nworkers_per_node="${__ntasks_per_node}(x${__nnodes})"
+
+  # Check if user has defined GREASY_NWORKERS_PER_NODE
+  # In this case, the user is giving us full control over the number of workers and on the nodelist
+  # This option should be the prefered one for distributed (MPI) and shared memory (OpenMP) applications
+  if [[ -n "$GREASY_NWORKERS_PER_NODE" ]]; then
+    if [ $GREASY_NWORKERS_PER_NODE -gt ${__ntasks_per_node} ]; then
+      export GREASY_NWORKERS_PER_NODE=${__ntasks_per_node}
+    elif [ $GREASY_NWORKERS_PER_NODE -lt 1 ]; then
+      export GREASY_NWORKERS_PER_NODE=1
+    fi
+    __greasy_nworkers_per_node="${GREASY_NWORKERS_PER_NODE}(x${__nnodes})"
+    export GREASY_NODELIST=`hostlist --repeat-slurm-tasks=${__greasy_nworkers_per_node} --expand --sep "," $SLURM_NODELIST`
+    export GREASY_NWORKERS=`echo $GREASY_NODELIST | awk -F',' '{print NF}'`
+  fi
+
+  if [[ -n "$GREASY_NWORKERS" && -z "$GREASY_NWORKERS_PER_NODE" ]]; then
+    if [ $GREASY_NWORKERS -gt ${__ntasks} ]; then
+      export GREASY_NWORKERS=${__ntasks}
+    elif [ $GREASY_NWORKERS -lt ${__nnodes} ]; then
+      export GREASY_NWORKERS=${__nnodes}
+    fi
+    export GREASY_NWORKERS_PER_NODE=`echo "$GREASY_NWORKERS / ${__nnodes}" | bc`
+    __greasy_nworkers_per_node="${GREASY_NWORKERS_PER_NODE}(x${__nnodes})"
+
+    export GREASY_NODELIST=`hostlist --repeat-slurm-tasks=${__greasy_nworkers_per_node} --expand --sep "," $SLURM_NODELIST`
+  fi
+
+  if [[ -n "$GREASY_NODELIST" && -z "$GREASY_NWORKERS" && -z "$GREASY_NWORKERS_PER_NODE" ]]; then
+    echo "Defining GREASY_NODELIST is deprecated. Please use GREASY_NWORKERS or GREASY_NWORKERS_PER_NODE"
+    exit
+  fi
+
+  if [[ -z "$GREASY_NWORKERS_PER_NODE" ]]; then
+    export GREASY_NWORKERS_PER_NODE=${__ntasks_per_node}
+    __greasy_nworkers_per_node="${GREASY_NWORKERS_PER_NODE}(x${__nnodes})"
+  fi
+
+  if [[ -z "$GREASY_NWORKERS" ]]; then
+    export GREASY_NODELIST=`hostlist --repeat-slurm-tasks=${__greasy_nworkers_per_node} --expand --sep "," $SLURM_NODELIST`
+    export GREASY_NWORKERS=`echo $GREASY_NODELIST | awk -F',' '{print NF}'`
+  fi
+
+  export GREASY_NTASKS_PER_WORKER=`echo "${__ntasks_per_node} / ${GREASY_NWORKERS_PER_NODE}" | bc`
+
 fi
 
+# echo "Inside GREASY.in"
+# echo "GREASY_ENGINE: $GREASY_ENGINE"
+# echo "GREASY_LAUNCHER: $GREASY_LAUNCHER"
+# echo "GREASY_NODELIST: $GREASY_NODELIST"
+# echo "GREASY_NWORKERS: $GREASY_NWORKERS"
+# echo "GREASY_NWORKERS_PER_NODE: $GREASY_NWORKERS_PER_NODE"
+# echo "GREASY_NTASKS_PER_WORKER: $GREASY_NTASKS_PER_WORKER"
 
 # Run Greasy
-echo $MPIRUN $EXE $@
+# echo $MPIRUN $EXE $@
 $MPIRUN $EXE $@
 
