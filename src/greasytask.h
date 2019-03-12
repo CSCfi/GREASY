@@ -237,7 +237,7 @@ public:
    * @return true if the task has a dedicated workdir, false otherwise.
    */
   bool hasWorkDir() {
-    return (!workdir.empty());
+    return !workdir.empty();
   }
 
   /**
