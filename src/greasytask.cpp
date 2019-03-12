@@ -1,17 +1,17 @@
-/* 
+/*
  * This file is part of GREASY software package
  * Copyright (C) by the BSC-Support Team, see www.bsc.es
- * 
+ *
  * GREASY is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 3
  * of the License, or (at your option) any later version.
- * 
+ *
  * GREASY is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GREASY. If not, see <http://www.gnu.org/licenses/>.
  *
@@ -26,9 +26,9 @@
 #include <vector>
 
 GreasyTask::GreasyTask ( ) {
-  
+
   initAttributes();
-  
+
 }
 
 GreasyTask::GreasyTask ( int id, string cmd ) {
@@ -36,11 +36,11 @@ GreasyTask::GreasyTask ( int id, string cmd ) {
   initAttributes();
   taskId = id;
   command = cmd;
-  
+
 }
 
 void GreasyTask::initAttributes ( ) {
-  
+
   taskId = -1;
 	taskNum = -1;
   command = "";
@@ -50,13 +50,13 @@ void GreasyTask::initAttributes ( ) {
   retries = 0;
   elapsed = 0;
   elapsedAcc = 0;
-  
+  workdir = "";
 }
 
 int GreasyTask::getTaskId ( )   {
-  
+
   return taskId;
-  
+
 }
 
 int GreasyTask::getTaskNum ( ) {
@@ -66,7 +66,7 @@ int GreasyTask::getTaskNum ( ) {
 }
 
 void GreasyTask::setTaskId ( int new_var )   {
-  
+
   taskId = new_var;
 
 }
@@ -76,21 +76,21 @@ void GreasyTask::setTaskNum ( int new_var ) {
 }
 
 string GreasyTask::getCommand ( )   {
-  
+
   return command;
-  
+
 }
 
 void GreasyTask::setCommand ( string new_var )   {
-  
+
   command = new_var;
-  
+
 }
 
 int GreasyTask::getTaskState() {
-  
+
   return taskState;
-  
+
 }
 
 string GreasyTask::printTaskState(){
@@ -126,15 +126,15 @@ string GreasyTask::printTaskState(){
 
 
 bool GreasyTask::isBlocked() {
- 
+
   return (taskState==GreasyTask::blocked);
-  
+
 }
 
 bool GreasyTask::isWaiting() {
- 
+
   return (taskState == GreasyTask::waiting);
-  
+
 }
 
 bool GreasyTask::isInvalid() {
@@ -145,111 +145,111 @@ bool GreasyTask::isInvalid() {
 
 
 void GreasyTask::setTaskState(TaskStates state) {
-  
+
   taskState = state;
-  
+
 }
 
 int GreasyTask::getReturnCode() {
-  
-  return returnCode; 
-  
+
+  return returnCode;
+
 }
 
 void GreasyTask::setReturnCode(int code) {
-  
+
   returnCode = code;
-  
+
 }
 
 unsigned long GreasyTask::getElapsedTime() {
-  
+
   return elapsed;
-  
+
 }
 
 unsigned long GreasyTask::getElapsedTimeAcc() {
-  
+
   return elapsedAcc;
-  
+
 }
 
 void GreasyTask::setElapsedTime(unsigned long et) {
-  
+
   elapsed = et;
   elapsedAcc += elapsed;
-  
+
 }
 
 string GreasyTask::getHostname() {
-  
+
   return hostname;
-  
+
 }
 
 void GreasyTask::setHostname(string h) {
-  
-  hostname = h;  
-  
+
+  hostname = h;
+
 }
 
 int GreasyTask::getRetries() {
-  
+
   return retries;
-  
+
 }
 
 void GreasyTask::addRetryAttempt() {
-  
+
   retries++;
-  
+
 }
 
 bool GreasyTask::hasDependencies() {
- 
+
   return (!dependencies.empty());
-  
+
 }
 
 list<int> GreasyTask::getDependencies(){
-  
+
   return dependencies;
-  
+
 }
-  
+
 void GreasyTask::addDependency(int parentTask) {
-  
+
   if ((parentTask != taskId)&&(parentTask>0))
     dependencies.push_back(parentTask);
-  
+
   if (isWaiting()) setTaskState(GreasyTask::blocked);
-  
+
 }
 
 void GreasyTask::removeDependency(int parentTask){
-  
+
   dependencies.remove(parentTask);
   if ((dependencies.size() == 0)
     &&(taskState == GreasyTask::blocked)) {
       taskState = GreasyTask::waiting;
   }
-  
+
 }
 
 bool GreasyTask::addDependencies(string deps) {
-  
+
   bool valid = true;
   string dep;
   int parent1,parent2, i;
   vector<string> matches;
   vector<string> tokens;
   vector<string>::iterator it;
-  
+
   //Skip empty dependency string...
   if (deps.empty()) return valid;
   dep = GreasyRegex::match(deps,"^([[:blank:]])+$");
-  if(!dep.empty()) return valid;   
-  
+  if(!dep.empty()) return valid;
+
   // Split the dependency string into tokens using "," as the separator.
   tokens = split(deps,',');
 
@@ -257,23 +257,23 @@ bool GreasyTask::addDependencies(string deps) {
   for ( it=tokens.begin() ; it < tokens.end(); it++ ){
 
     // Basic dependency [1] or [12]
-    dep = GreasyRegex::match(*it,"^[[:blank:]]*([1-9][0-9]*)[[:blank:]]*$");	
+    dep = GreasyRegex::match(*it,"^[[:blank:]]*([1-9][0-9]*)[[:blank:]]*$");
     if(!dep.empty()) {
       addDependency(fromString(parent1,dep));
       continue;
     }
-    
+
     // Relative previous dependency [-1] or [-12]
-    dep = GreasyRegex::match(*it,"^[[:blank:]]*-([1-9][0-9]*)[[:blank:]]*$");	
-    if(!dep.empty()) {	  
+    dep = GreasyRegex::match(*it,"^[[:blank:]]*-([1-9][0-9]*)[[:blank:]]*$");
+    if(!dep.empty()) {
       addDependency(taskId-fromString(parent1,dep));
       continue;
     }
 
 /*  // Not supported at this time due to the dependency complexity
     // Relative forward dependency [+1] or [+12]
-    dep = GreasyRegex::match(*it,"^[[:blank:]]*\\+([1-9][0-9]*)[[:blank:]]*$");	
-    if(!dep.empty()) {	  
+    dep = GreasyRegex::match(*it,"^[[:blank:]]*\\+([1-9][0-9]*)[[:blank:]]*$");
+    if(!dep.empty()) {
       addDependency(taskId+fromString(parent1,dep));
       continue;
     }
@@ -282,17 +282,17 @@ bool GreasyTask::addDependencies(string deps) {
     // Range dependency [1-2] [2-1] or [1-1]
     string rangePattern = "^[[:blank:]]*([1-9][0-9]*)[[:blank:]]*-[[:blank:]]*([1-9][0-9]*)[[:blank:]]*$";
     GreasyRegex rangeReg = GreasyRegex(rangePattern);
-      
+
     if (rangeReg.multipleMatch(*it,matches) > 0) {
       parent1 = fromString(parent1,matches.front());
       parent2 = fromString(parent2,matches.back());
-      
+
       // [1-2]
       if (parent1<parent2) {
 	for ( i=parent1;i<=parent2;i++) {
 	  addDependency(i);
 	}
-      // [2-1]	   
+      // [2-1]
       } else if (parent1>parent2) {
 	for ( i=parent2;i<=parent1;i++) {
 	  addDependency(i);
@@ -301,30 +301,30 @@ bool GreasyTask::addDependencies(string deps) {
       } else {
 	addDependency(parent1);
       }
-      
+
       matches.clear();
       continue;
     }
-    
+
     // If we reach this point, the token is not valid.
     valid=false;
     taskState=GreasyTask::invalid;
     break;
-	
+
   }
   dependencies.sort();
   dependencies.unique();
   return valid;
-  
+
 }
 
 string GreasyTask::dump() {
-  
+
   string out = "";
   list<int>::iterator it;
-  
+
   string stateDesc[]={"invalid","blocked", "waiting","running","completed", "failed","cancelled"};
-  
+
   out+="Taskid: " + toString(taskId) +"\n";
   out+="State: " + stateDesc[taskState] +"\n";
   out+="Command: " + command +"\n";
@@ -338,7 +338,7 @@ string GreasyTask::dump() {
   out+=" #]\n";
 */
   return out;
-  
+
 }
 
 string GreasyTask::dumpDependencies(){
@@ -347,11 +347,11 @@ string GreasyTask::dumpDependencies(){
   list<int>::iterator it;
   int last = 0;
   int left = 1;
-  
+
   //Make sure list is sorted
   dependencies.sort();
-  dependencies.unique(); 
-  
+  dependencies.unique();
+
   if (!hasDependencies()) return out;
 
   // Walk through the dependency list always comparing with the previous value
@@ -374,7 +374,7 @@ string GreasyTask::dumpDependencies(){
       last = *it;
     }
   }
-  
+
   // Make last addition to the list
   if (last > 0) {
     if (left==last) {
@@ -383,9 +383,9 @@ string GreasyTask::dumpDependencies(){
       out += toString(left) + "," + toString(last);
     } else {
       out += toString(left) + "-" + toString(last);
-    } 
+    }
   }
-    
+
   return out;
-  
+
 }

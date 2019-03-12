@@ -1,17 +1,17 @@
-/* 
+/*
  * This file is part of GREASY software package
  * Copyright (C) by the BSC-Support Team, see www.bsc.es
- * 
+ *
  * GREASY is free software: you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 3
  * of the License, or (at your option) any later version.
- * 
+ *
  * GREASY is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with GREASY. If not, see <http://www.gnu.org/licenses/>.
  *
@@ -30,7 +30,7 @@ using namespace std;
 
 /**
  * Greasyutils is a set of util methods and macros to make life easier to the developer.
- * 
+ *
 */
 
 /**
@@ -51,16 +51,16 @@ do { 									\
 
 /**
   * Inline function to convert anything to a string.
-  * @param t The variable to convert. 
+  * @param t The variable to convert.
   * @return The converted string.
   */
 template <class T>
 inline string toString (const T& t) {
-  
+
   stringstream ss;
   ss << t;
   return ss.str();
-  
+
 }
 
 /**
@@ -71,11 +71,11 @@ inline string toString (const T& t) {
   */
 template <class T>
 inline T fromString(T& t, const string& s) {
-  
+
   istringstream iss(s);
   iss >> dec >> t;
   return t;
-  
+
 }
 
 /**
@@ -85,16 +85,16 @@ inline T fromString(T& t, const string& s) {
   * @return A vector with all the splitted tokens.
   */
 inline vector<string> split(const string &s, char delim) {
-  
+
   vector<std::string> elems;
   stringstream ss(s);
   string item;
-  
+
   while(getline(ss, item, delim))
     elems.push_back(item);
-  
+
   return elems;
-  
+
 }
 
 /**
@@ -103,12 +103,12 @@ inline vector<string> split(const string &s, char delim) {
   * @return The string in uppercase.
   */
 inline string toUpper(string& s) {
-  
+
   for (size_t i = 0; i < s.length(); ++i)
     s[i]=toupper(s[i]);
 
   return s;
-  
+
 }
 
 /**
@@ -116,7 +116,7 @@ inline string toUpper(string& s) {
   * @return The string containing the current working dir.
   */
 inline string getWorkingDir() {
- 
+
   char temp[4096];
   return ( getcwd(temp, 4096) ? std::string( temp ) + "/" : std::string("") );
 

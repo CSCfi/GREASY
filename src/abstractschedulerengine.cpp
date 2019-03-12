@@ -23,7 +23,8 @@
 #include <cstring>
 
 
-AbstractSchedulerEngine::AbstractSchedulerEngine ( const string& filename) : AbstractEngine(filename){
+AbstractSchedulerEngine::AbstractSchedulerEngine ( const string& filename, int ntasks_per_worker) : 
+  AbstractEngine(filename, ntasks_per_worker){
   
     engineType="abstractscheduler";
     

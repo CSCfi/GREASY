@@ -34,7 +34,7 @@ StrictCheck=yes
 
 LogFile=greasy.log
 
-# Loglevel to use. 
+# Loglevel to use.
 # The higher the number is, the more verbose the output will be.
 # Each level includes the previous ones. Levels 2 or 3 are recommended.
 # These are the options:

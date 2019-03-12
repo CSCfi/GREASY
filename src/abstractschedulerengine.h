@@ -40,7 +40,7 @@ public:
    * Constructor that adds the filename to process.
    * @param filename path to the task file.
    */
-  AbstractSchedulerEngine (const string& filename );
+  AbstractSchedulerEngine (const string& filename, int ntasks_per_worker);
   
   /**
    * reimplementation of the init() method adding the workers init code.
