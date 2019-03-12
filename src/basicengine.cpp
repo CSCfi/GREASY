@@ -224,9 +224,9 @@ int BasicEngine::executeTask(GreasyTask *task, int worker) {
 
     // capturing the number GREASY workers in a given compute node
     int num_same_nodes = 0;
-    for(int i = 0; i < workerNodes.size(); i++) {
+    for(int i = 0; i < workerNodes.size(); ++i) {
       if(workerNodes[i].compare(node) == 0) {
-        num_same_nodes++;
+        ++num_same_nodes;
       }
     }
 

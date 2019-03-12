@@ -132,9 +132,9 @@ protected:
   */
   string dumpTaskMap();
 
-  void removeSubstrs(string& str, string& pattern) {
+  void removeSubstrs(string& str, const string& pattern) {
   string::size_type n = pattern.length();
-  for (string::size_type i = str.find(pattern);
+  for (auto i = str.find(pattern);
       i != string::npos;
       i = str.find(pattern))
       str.erase(i, n);

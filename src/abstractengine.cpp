@@ -54,13 +54,6 @@ AbstractEngine* AbstractEngineFactory::getAbstractEngineInstance(
   }
   #endif
 
- //  #ifdef SLURM_ENGINE
- //  if (type == "slurm"){
- //   GreasyLog::getInstance()->record(GreasyLog::devel, "AbstractEngineInstance::getAbstractEngineInstance", "Creating engine type: 'slurm'");
- //        return new SlurmEngine(filename, ntasks_per_worker);
-  // }
- //  #endif
-
   #ifdef THREAD_ENGINE
   if (type == "thread"){
   GreasyLog::getInstance()->record(GreasyLog::devel, "AbstractEngineInstance::getAbstractEngineInstance", "Creating engine type: 'thread'");

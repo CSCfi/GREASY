@@ -50,7 +50,6 @@ int main(int argc, char *argv[]) {
 
   int opt;
   string input = "";
-  // string filename = "";
   int ntasks_per_worker = 1;
 
   // check if there is a (non-option) argument:
@@ -61,37 +60,9 @@ int main(int argc, char *argv[]) {
     input = argv[argc - 1];
   }
 
-  // opterr = 0;
-  // // Retrieve the options:
-  // while ((opt = getopt(argc, argv, "n:f:")) != -1) {
-  // // while ((opt = getopt(argc, argv, "f:")) != -1) {
-  //   switch (opt) {
-  //   case 'n':
-  //     ntasks_per_worker = atoi(string(optarg).c_str());
-  //     break;
-  //   case 'f':
-  //     filename = string(optarg);
-  //     break;
-  //   case '?':
-  //     cerr << "? case\n";
-  //     if (optopt == 'n') {
-  //       cerr << "Option -n requires an argument." << endl;
-  //     } else if (optopt == 'f') {
-  //       cerr << "Option -f requires an argument." << endl;
-  //     }
-  //     cerr << "Unknown option: '" << char(optopt) << "'!" << endl;
-  //     break;
-  //   }
-  // }
-
-  // if (filename.length() < 1) {
-  //   printError();
-  //   return (0);
-  // }
-
   if (argc != 2) {
       cout << "Usage: greasy filename" << endl;
-      return (0);
+      return 1;
   }
 
   string filename(argv[1]);
