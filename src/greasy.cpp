@@ -61,7 +61,12 @@ int main(int argc, char *argv[]) {
   }
 
   if (argc != 2) {
+      cout << endl << "Error" << endl;
       cout << "Usage: greasy filename" << endl;
+      cout << "please refer to the documentation https://user.cscs.ch/tools/high_throughput" << endl << endl;
+      cerr << endl << "Error" << endl;
+      cerr << "Usage: greasy filename" << endl;
+      cerr << "please refer to the documentation https://user.cscs.ch/tools/high_throughput" << endl << endl;
       return 1;
   }
 
